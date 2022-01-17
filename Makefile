@@ -9,7 +9,7 @@ setup:
 
 start-server:
 ifneq ("$(wildcard env)","")
-	source env/bin/activate && hypercorn src/server/:app --reload
+	source env/bin/activate && hypercorn src/server_main:app --reload
 else
 	@echo "env doesn't exist - run setup first!"
 endif
