@@ -10,3 +10,4 @@ class GameState(BaseModel):
     player_id: List[int]  # player id != 0
     endtime: float  # epoch time
     board: Board
+

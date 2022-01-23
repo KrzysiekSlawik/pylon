@@ -14,10 +14,6 @@ def get_db():
     finally:
         database.session.close()
 
-@app.post('/play')
-def play(state:GameState):
-    return state.board[0][0][0]
-
 
 @app.get('/newplayer/{nick}')
 def new_player_id(nick, db = Depends(get_db)):
@@ -47,3 +43,7 @@ def list_players(db = Depends(get_db)):
 @app.get('/list/games', response_model=List[GameState])
 def list_games(db = Depends(get_db)):
     return db.list_games()
+
+@app.post('/play/{game_id}/{player_id}')
+def play(game_id:int, player_id:int, game:GameState, db = Depends(get_db)):
+
