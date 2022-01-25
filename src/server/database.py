@@ -1,8 +1,9 @@
+from time import sleep
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import sessionmaker
 from pydantic import BaseModel
-from common.pylon import GameState
+from server.game_session import GameSession
 
 Base = declarative_base()
 
@@ -14,17 +15,18 @@ class Player(Base):
     wins = Column(Integer)
     loses = Column(Integer)
 
+
 class PlayerSchema(BaseModel):
     id: int
     nick: str
     wins: int
     loses: int
 
+
 class DBSession:
     def __init__(self) -> None:
         self.__create_db()
         self.session = self.__my_session()
-        self.games:list[GameState] = []
 
     def __create_db(self):
         engine = create_engine('sqlite:///server.db', echo=False)
@@ -44,31 +46,37 @@ class DBSession:
         self.session.commit()
         return player.id
 
-    def new_game(self) -> GameState:
-        id = len(self.games)
-        self.games.append(GameState(game_id=id,
-                                    player_id=[],
-                                    endtime=0,
-                                    board=[[[0 for i in range(0,k)] for i in range(0,k)]for k in [4,3,2,1]]))
-        return id
-
-    def join_game(self, game_id:int, player_id:int) -> bool:
-        if len(self.games[game_id].player_id) >= 2:
-            return False
-        self.games[game_id].player_id.append(player_id)
-        return True
-
-    def join_any_game(self, player_id:int) -> bool:
-        games = list(filter(lambda g: len(g.player_id) < 2, self.games))
-        if len(games) > 0:
-            self.join_game(games[0].game_id, player_id)
-        else:
-            game_id = self.new_game()
-            self.join_game(game_id, player_id)
-        return True
-
-    def list_games(self):
-        return self.games
 
     def list_players(self):
         return self.session.query(Player).all()
+
+
+class DBLive:
+    def __init__(self) -> None:
+        self.games:list[GameSession] = []
+
+    def make_move(self, game_id, turn):
+        self.games[game_id].put_turn(turn)
+        return self.games[game_id].get_turn_nowait()
+
+    async def get_next_turn(self, game_id):
+        return await self.games[game_id].get_turn()
+
+    def list_games(self) -> GameSession:
+        return self.games
+
+    def new_game(self) -> int:
+        id = len(self.games)
+        self.games.append(GameSession(id))
+        return id
+
+    async def join_game(self, game_id:int, player_id:int):
+        return await self.games[game_id].join_session(player_id)
+
+    async def join_any_game(self, player_id:int):
+        games = list(filter(lambda g: len(g._players) < 2, self.games))
+        if len(games) > 0:
+            return await self.join_game(games[0].game_id, player_id)
+        else:
+            game_id = self.new_game()
+            return await self.join_game(game_id, player_id)
