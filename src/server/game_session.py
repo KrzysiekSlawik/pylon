@@ -1,28 +1,7 @@
-from asyncio import Queue
 from typing import Any, List, Dict
 from pydantic import BaseModel
 from common.pylon import Board, GameState
-
-
-class Resource:
-    '''
-    object representing resource that could be created in the future
-    '''
-    def __init__(self) -> None:
-        self._resource = Queue()
-
-
-    def get_nowait(self) -> Any:
-        res = self._resource.get_nowait()
-        self._resource.put_nowait(res)
-        return res
-
-
-    async def get(self) -> Any:
-        res = await self._resource.get()
-
-    def put(self, value: Any):
-        self._resource.put_nowait(value)
+from common.resource import Resource
 
 
 class GameSession:
@@ -76,9 +55,8 @@ class GameSession:
 
 
 
-class GameSessionSchema(BaseModel):
+class GameSessionState(BaseModel):
     game_id: int
+    game_name: str
     players_id: List[int]
     game_state: GameState
-
-
