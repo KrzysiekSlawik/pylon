@@ -1,6 +1,6 @@
 from typing import Any, List, Dict
 from pydantic import BaseModel
-from common.pylon import Board, GameState, empty_game_state_factory
+from common.pylos import Board, GameState, empty_game_state_factory
 from common.resource import Resource
 
 
@@ -8,7 +8,6 @@ class GameSessionState(BaseModel):
     game_id: int
     game_name: str
     players_id: List[int]
-    game_state: GameState
 
 
 class GameSession:
@@ -20,6 +19,14 @@ class GameSession:
         self._current_turn_id = 0
         self.put_turn(empty_game_state_factory())
 
+    @property
+    def state(self) -> GameSessionState:
+        return GameSessionState(
+            game_id=self.id,
+            game_name=self.name,
+            players_id=self._players
+        )
+
     def put_turn(self, turn: GameState):
         '''
         puts new turn
@@ -30,7 +37,6 @@ class GameSession:
             self._turns[self._current_turn_id] = Resource()
             self._turns[self._current_turn_id].put(turn)
         finally:
-            print(f"put {self._current_turn_id}")
             self._current_turn_id += 1
 
     async def get_turn(self, turn_id: int) -> GameState:
@@ -56,7 +62,6 @@ class GameSession:
             return None
         self._players.append(player_id)
         self.put_turn(empty_game_state_factory())
-        print(f"join_session {self._players}")
         return await self.get_turn(len(self._players) - 1)
 
 

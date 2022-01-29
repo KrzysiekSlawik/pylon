@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends
-from common.pylon import GameState
+from fastapi import FastAPI, Depends, HTTPException
+from common.pylos import GameState
 from typing import List
+from server.database.game_session import GameSession, GameSessionState
 
 from tortoise.contrib.fastapi import (
     HTTPNotFoundError,
@@ -15,6 +16,11 @@ from server.database.models.user import (
 from server.database.active_game_sessions import (
     current_sessions
 )
+
+import logging
+import logging.config
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI()
@@ -37,8 +43,16 @@ async def player_list():
     return await user_pydantic.from_queryset(Users.all())
 
 @app.post('/game/new')
-def game_new(name:str):
-    current_sessions.new_game()
+async def game_new(name:str):
+    try:
+        return current_sessions.new_game(name)
+    except NameError:
+        return HTTPException(code=409, detail="game with this name already exists!")
+
+@app.get('/game/search/{name}', response_model=List[GameSessionState])
+async def search_games(name:str):
+    return list(map(lambda g: g.state, current_sessions.search_games(name)))
+
 
 @app.post('/game/join/{game_id}/{player_id}')
 async def game_join(game_id:int, player_id:int):
