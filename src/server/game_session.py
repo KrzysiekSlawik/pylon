@@ -45,14 +45,9 @@ class GameSession:
             print(f"put {self._current_turn_id}")
             self._current_turn_id += 1
 
-    async def get_turn(self, turn_id: int=None) -> Any:
+    async def get_turn(self, turn_id: int) -> Any:
         '''
-        get game turn,
-        ---
-        if turn_id==None (default) blocks until new turn is added and returns it
-        ---
-        if turn_id>=current_turn blocks until turn with turn_id is added and returns it
-        ---
+        get game turn (blocking until turn exist)
         '''
         if not turn_id:
             turn_id = self._current_turn_id
@@ -70,7 +65,6 @@ class GameSession:
 
     async def join_session(self, player_id: int) -> Board:
         if len(self._players) >= 2:
-            print(f"join Session with too many players {self._players}")
             return None
         self._players.append(player_id)
         if len(self._players) == 2:
