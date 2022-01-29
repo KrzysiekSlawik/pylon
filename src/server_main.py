@@ -1,61 +1,61 @@
 from fastapi import FastAPI, Depends
 from common.pylon import GameState
-from server.database import DBLive, DBSession, PlayerSchema
 from typing import List
 
-from server.game_session import GameSessionSchema
+from tortoise.contrib.fastapi import (
+    HTTPNotFoundError,
+    register_tortoise
+)
+
+from server.database.models.user import (
+    Users,
+    user_pydantic
+)
+
+from server.database.active_game_sessions import (
+    current_sessions
+)
 
 
 app = FastAPI()
 
-database = DBSession()
+register_tortoise(
+    app,
+    db_url="sqlite://db.sqlite3",
+    modules={"models": ["server.database.models.user"]},
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
 
-db_live = DBLive()
+@app.post('/player/new/{username}', response_model=user_pydantic)
+async def player_new(username:str):
+    user = await Users.create(username=username)
+    return await user_pydantic.from_tortoise_orm(user)
 
-def get_db():
-    try:
-        yield database
-    finally:
-        database.session.close()
+@app.get('/player/list', response_model=List[user_pydantic])
+async def player_list():
+    return await user_pydantic.from_queryset(Users.all())
 
+@app.post('/game/new')
+def game_new(name:str):
+    current_sessions.new_game()
 
-@app.get('/player/new/{nick}')
-def player_new(nick, db=Depends(get_db)):
-    return db.new_player(nick)
+@app.post('/game/join/{game_id}/{player_id}')
+async def game_join(game_id:int, player_id:int):
+    pass
 
-
-@app.get('/game/new')
-def game_new():
-    return db_live.new_game()
-
-
-@app.get('/game/join/{game_id}/{player_id}')
-async def game_join(game_id:int,player_id:int):
-    return await db_live.join_game(game_id, player_id)
-
-
-@app.get('/game/join/{player_id}')
+@app.post('/game/join/{player_id}')
 async def game_join_any(player_id:int):
-    return await db_live.join_any_game(player_id)
+    pass
 
-
-@app.get('/player/list', response_model=List[PlayerSchema])
-def player_list(db=Depends(get_db)):
-    players = db.list_players()
-    return list(map(lambda p: PlayerSchema(id=p.id, nick=p.nick, wins=p.wins, loses=p.loses), players))
-
-
-@app.get('/game/list', response_model=List[GameSessionSchema])
+@app.get('/game/list')
 def game_list():
-    games = db_live.list_games()
-    return list(map(lambda g: GameSessionSchema(game_id=g.game_id,
-                                                players_id=g.players,
-                                                game_state=g.game_state), games))
+    pass
 
-@app.post('/game/{game_id}/move')
-def game_move(game_id:int):
-    return db_live.make_move(game_id, [])
+@app.post('/game/move')
+def game_move(game_id:int, player_id:int):
+    pass
 
-@app.get('/game/{game_id}/next_state')
+@app.get('/game/move')
 async def game_next_state(game_id: int):
-    return await db_live.get_next_turn(game_id)
+    pass

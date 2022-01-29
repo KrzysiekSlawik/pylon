@@ -1,17 +1,26 @@
 from typing import Any, List, Dict
 from pydantic import BaseModel
-from common.pylon import Board, GameState
+from common.pylon import Board, GameState, empty_game_state_factory
 from common.resource import Resource
 
 
+class GameSessionState(BaseModel):
+    game_id: int
+    game_name: str
+    players_id: List[int]
+    game_state: GameState
+
+
 class GameSession:
-    def __init__(self, game_id: int) -> None:
-        self.game_id = game_id
+    def __init__(self, session_id: int, session_name: str) -> None:
+        self.id = session_id
+        self.name = session_name
         self._players = []
         self._turns: Dict[int, Resource] = {}
         self._current_turn_id = 0
+        self.put_turn(empty_game_state_factory())
 
-    def put_turn(self, turn):
+    def put_turn(self, turn: GameState):
         '''
         puts new turn
         '''
@@ -24,7 +33,7 @@ class GameSession:
             print(f"put {self._current_turn_id}")
             self._current_turn_id += 1
 
-    async def get_turn(self, turn_id: int) -> Any:
+    async def get_turn(self, turn_id: int) -> GameState:
         '''
         get game turn (blocking until turn exist)
         '''
@@ -36,7 +45,7 @@ class GameSession:
             self._turns[turn_id] = Resource()
             return await self._turns[turn_id].get()
 
-    def get_turn_nowait(self) -> Any:
+    def get_turn_nowait(self) -> GameState:
         '''
         get last game turn
         '''
@@ -46,17 +55,9 @@ class GameSession:
         if len(self._players) >= 2:
             return None
         self._players.append(player_id)
-        if len(self._players) == 2:
-            self.put_turn([[[0 for _ in range(0,k)]
-                            for _ in range(0,k)]
-                           for k in [4,3,2,1]])
+        self.put_turn(empty_game_state_factory())
         print(f"join_session {self._players}")
         return await self.get_turn(len(self._players) - 1)
 
 
 
-class GameSessionState(BaseModel):
-    game_id: int
-    game_name: str
-    players_id: List[int]
-    game_state: GameState
