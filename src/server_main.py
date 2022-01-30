@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException
+from common.messages import BadMsgResp, MoveMsgError, msg_from_json
+from fastapi import FastAPI, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from common.pylos import GameState
 from typing import List
 from server.database.game_session import GameSession, GameSessionState
@@ -73,3 +74,24 @@ def game_move(game_id:int, player_id:int):
 @app.get('/game/move')
 async def game_next_state(game_id: int):
     pass
+
+@app.websocket('/game/connect')
+async def connect_to_game(websocket: WebSocket, game_id:int, player_id:int = None):
+    await current_sessions.connect(websocket, game_id, player_id)
+    try:
+        while True:
+            try:
+                json_msg = await websocket.receive_json()
+                msg = msg_from_json(json_msg)
+                await current_sessions.handle_msg(websocket, game_id, player_id, msg)
+            except TypeError:
+                await websocket.send_json(
+                    BadMsgResp({'detail': f'unknown msg type: {json_msg}'}).to_json()
+                )
+            except MoveMsgError:
+                await websocket.send_json(
+                    BadMsgResp({'detail': f'MoveMsg bad data: {json_msg}'}).to_json()
+                )
+    except WebSocketDisconnect:
+        current_sessions.disconnect(websocket, game_id, player_id)
+

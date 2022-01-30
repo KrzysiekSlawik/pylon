@@ -1,7 +1,9 @@
+from common.messages import Msg
+from fastapi import WebSocket
 from server.database.game_session import GameSession
 
 
-class GameSessions:
+class GameSessionsManager:
     def __init__(self) -> None:
         self.games:list[GameSession] = []
 
@@ -20,6 +22,11 @@ class GameSessions:
     def list_games(self) -> GameSession:
         return self.games
 
+    def connect(websocket: WebSocket, game_id: int, player_id: int):
+        pass
+
+    def handle_msg(self, websocket: WebSocket, game_id: int, player_id: int, msg: Msg):
+        self.games[game_id].handle_msg(websocket, player_id, msg)
 
     def make_move(self, game_id, turn):
         self.games[game_id].put_turn(turn)
@@ -39,4 +46,4 @@ class GameSessions:
             game_id = self.new_game()
             return await self.join_game(game_id, player_id)
 
-current_sessions = GameSessions()
+current_sessions = GameSessionsManager()
