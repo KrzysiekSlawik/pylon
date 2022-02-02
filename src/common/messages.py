@@ -44,6 +44,7 @@ class GameStateMsg(Msg):
         self.players_names: List[str] = json_msg['players_names']
         self.tokens: List[int] = json_msg['tokens']
         self.board: Board = json_msg['board']
+        self.legal_moves = json_msg['legal']
 
 
 class GameOverMsg(Msg):
