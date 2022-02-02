@@ -18,11 +18,6 @@ from server.database.active_game_sessions import (
     current_sessions
 )
 
-import logging
-import logging.config
-
-logger = logging.getLogger(__name__)
-
 
 app = FastAPI()
 
@@ -34,14 +29,17 @@ register_tortoise(
     add_exception_handlers=True,
 )
 
+
 @app.post('/player/new/{username}', response_model=user_pydantic)
 async def player_new(username:str):
     user = await Users.create(username=username)
     return await user_pydantic.from_tortoise_orm(user)
 
+
 @app.get('/player/list', response_model=List[user_pydantic])
 async def player_list():
     return await user_pydantic.from_queryset(Users.all())
+
 
 @app.post('/game/new')
 async def game_new(name:str):
@@ -50,30 +48,16 @@ async def game_new(name:str):
     except NameError:
         return HTTPException(code=409, detail="game with this name already exists!")
 
+
 @app.get('/game/search/{name}', response_model=List[GameSessionState])
 async def search_games(name:str):
     return list(map(lambda g: g.state, current_sessions.search_games(name)))
 
 
-@app.post('/game/join/{game_id}/{player_id}')
-async def game_join(game_id:int, player_id:int):
-    pass
-
-@app.post('/game/join/{player_id}')
-async def game_join_any(player_id:int):
-    pass
-
-@app.get('/game/list')
+@app.get('/game/list', response_model=List[GameSessionState])
 def game_list():
-    pass
+    return list(map(lambda g: g.state, current_sessions.list_games()))
 
-@app.post('/game/move')
-def game_move(game_id:int, player_id:int):
-    pass
-
-@app.get('/game/move')
-async def game_next_state(game_id: int):
-    pass
 
 @app.websocket('/game/connect')
 async def connect_to_game(websocket: WebSocket, game_id:int, player_id:int = None):
