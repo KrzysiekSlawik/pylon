@@ -1,6 +1,6 @@
 from json import dumps
 from typing import List
-from pylos import Board
+from common.pylos import Board
 
 
 class Msg:

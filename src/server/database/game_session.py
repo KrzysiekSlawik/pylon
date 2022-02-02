@@ -3,7 +3,7 @@ from common.messages import BadMsgResp, GameOverMsg, GameStateMsg, MoveMsg, Msg
 from fastapi import WebSocket
 from pydantic import BaseModel
 from common.pylos import Board, generate_empty_board, legal_moves
-from database.models.user import Users, user_pydantic
+from server.database.models.user import Users, user_pydantic
 
 
 class GameSessionState(BaseModel):
@@ -110,12 +110,12 @@ class GameSession:
     async def _update_state(self, move: Dict):
         self._turn += 1
         player = self._turn % 2
-        cost = 0 if move['cat'] is 'move' else 1
+        cost = 0 if move['cat'] == 'move' else 1
         put_level = move['level']
         put_x = move['x']
         put_y = move['y']
         self._board[put_level][put_x][put_y] = player
-        if move['cat'] is 'move':
+        if move['cat'] == 'move':
             take_level = move['take_level']
             take_x = move['take_x']
             take_y = move['take_y']
