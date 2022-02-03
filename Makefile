@@ -23,7 +23,7 @@ endif
 
 start-bot:
 ifneq ("$(wildcard env)","")
-	source env/bin/activate && bot.py
+	source env/bin/activate && python3 src/bot_client.py
 else
 	@echo "env doesn't exist - run setup first!"
 endif
