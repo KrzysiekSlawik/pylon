@@ -8,7 +8,7 @@ class Msg:
         self.type = self.__class__.__name__
 
     def to_json(self):
-        return dumps(self.__dict__)
+        return self.__dict__
 
 
 class MoveMsgError(Exception):
@@ -44,7 +44,7 @@ class GameStateMsg(Msg):
         self.players_names: List[str] = json_msg['players_names']
         self.tokens: List[int] = json_msg['tokens']
         self.board: Board = json_msg['board']
-        self.legal_moves = json_msg['legal']
+        self.legal = json_msg['legal']
 
 
 class GameOverMsg(Msg):
@@ -62,7 +62,7 @@ class BadMsgResp(Msg):
 
 
 def msg_from_json(json):
-    msg_type = json.get('type')
+    msg_type = json['type']
     if msg_type == MoveMsg.__name__:
         return MoveMsg(json)
     if msg_type == GameStateMsg.__name__:

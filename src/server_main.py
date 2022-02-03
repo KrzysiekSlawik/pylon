@@ -66,6 +66,7 @@ async def connect_to_game(websocket: WebSocket, game_id:int, player_id:int = Non
         while True:
             try:
                 json_msg = await websocket.receive_json()
+                print(json_msg)
                 msg = msg_from_json(json_msg)
                 await current_sessions.handle_msg(websocket, game_id, player_id, msg)
             except TypeError:
@@ -77,5 +78,5 @@ async def connect_to_game(websocket: WebSocket, game_id:int, player_id:int = Non
                     BadMsgResp({'detail': f'MoveMsg bad data: {json_msg}'}).to_json()
                 )
     except WebSocketDisconnect:
-        current_sessions.disconnect(websocket, game_id, player_id)
+        await current_sessions.disconnect(websocket, game_id, player_id)
 

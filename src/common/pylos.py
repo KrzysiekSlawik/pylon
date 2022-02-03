@@ -39,8 +39,8 @@ def _supported_empty(board: Board, level):
         and all(
             [
                 board[level - 1][xi][yi]
-                for xi in range(x, x + 1)
-                for yi in range(y, y + 1)
+                for xi in range(x, x + 2)
+                for yi in range(y, y + 2)
             ]
         )
     ]
@@ -58,12 +58,12 @@ def _movable(board, level, player):
         {"x": x, "y": y, "level": level}
         for x in range(0, 4 - level)
         for y in range(0, 4 - level)
-        if board[level][x][y] == player
+        if board[level][x][y] == player + 1
         and not any(
             [
                 board[level + 1][xi][yi]
-                for xi in range(max(0, x - 1), min(3 - level, x))
-                for yi in range(max(0, y - 1), min(3 - level, y))
+                for xi in range(max(0, x - 1), min(3 - level, x + 1))
+                for yi in range(max(0, y - 1), min(3 - level, y + 1))
             ]
         )
     ]
@@ -88,7 +88,7 @@ def _legal_cat_move(board, player):
         not in [
             {"x": xi, "y": yi, "level": 0}
             for xi in [s["x"], s["x"] + 1]
-            for yi in [s["y"], [s["y"] + 1]]
+            for yi in [s["y"], s["y"] + 1]
         ]
     ]
     mv1 = _movable(board, 1, player)
@@ -107,9 +107,9 @@ def _legal_cat_move(board, player):
         for m in mv1
         if m
         not in [
-            {"x": xi, "y": yi, "level": 0}
+            {"x": xi, "y": yi, "level": 1}
             for xi in [s["x"], s["x"] + 1]
-            for yi in [s["y"], [s["y"] + 1]]
+            for yi in [s["y"], s["y"] + 1]
         ]
     ]
     return res

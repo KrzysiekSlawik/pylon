@@ -25,7 +25,10 @@ class GameSessionsManager:
     async def connect(self, websocket: WebSocket, game_id: int, player_id: int):
         await self.games[game_id].connect(websocket, player_id)
 
-    def handle_msg(self, websocket: WebSocket, game_id: int, player_id: int, msg: Msg):
-        self.games[game_id].handle_msg(websocket, player_id, msg)
+    async def disconnect(self, websocket: WebSocket, game_id: int, player_id: int):
+        await self.games[game_id].disconnect(websocket, player_id)
+
+    async def handle_msg(self, websocket: WebSocket, game_id: int, player_id: int, msg: Msg):
+        await self.games[game_id].handle_msg(websocket, player_id, msg)
 
 current_sessions = GameSessionsManager()

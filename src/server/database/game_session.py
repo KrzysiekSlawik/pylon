@@ -1,3 +1,4 @@
+from asyncio import sleep
 from typing import Any, List, Dict
 from common.messages import BadMsgResp, GameOverMsg, GameStateMsg, MoveMsg, Msg
 from fastapi import WebSocket
@@ -25,9 +26,13 @@ class GameSession:
         self._tokens: List[int] = [15, 15]
         self._board: Board = generate_empty_board()
         self._next_legal = self._legal()
+        self._is_finished = False
 
     async def connect(self, websocket: WebSocket, player_id: int):
         await websocket.accept()
+        if player_id == 0:  # join as observer even if game is not full
+            self._connections.append(websocket)
+            return
         if len(self._players_ids) < 2:
             self._players_ids.append(player_id)
             player_db = await user_pydantic.from_queryset_single(Users.get(id=player_id))
@@ -36,6 +41,12 @@ class GameSession:
         self._connections.append(websocket)
         if len(self._players_ids) >= 2:
             await self.__start_game()
+
+    async def disconnect(self, websocket: WebSocket, player_id: int):
+        await websocket.close()
+        if websocket in self._players_connections:
+            winner = 0 if self._players_connections[1] == websocket else 1
+            await self._end_game()
 
     async def __start_game(self):
         await self._broadcast(
@@ -55,6 +66,8 @@ class GameSession:
         )
 
     def _legal(self) -> List[Dict]:
+        if self._tokens[(self._turn + 1) % 2] == 0:
+            return []
         return legal_moves(self._board, self._turn + 1)
 
     async def _broadcast(self, msg: Msg):
@@ -66,7 +79,7 @@ class GameSession:
     async def handle_msg(self, websocket: WebSocket, player_id: int, msg: Msg):
         if type(msg) is MoveMsg:
             if not self._is_authorized_for_move(websocket, player_id):
-                websocket.send_json(
+                await websocket.send_json(
                     BadMsgResp(
                         {
                             'detail': "permission denied"
@@ -74,21 +87,29 @@ class GameSession:
                     ).to_json()
                 )
                 return
-            move = msg.__dict__.pop('type', None)
+            msg.__dict__.pop('type', None)
+            move = msg.__dict__
             if move not in self._next_legal:
                 await websocket.send_json(
                     BadMsgResp(
                         {
-                            'detail': "illegal move"
+                            'detail': f"illegal move: {move}"
                         }
                     ).to_json()
                 )
-                self._end_game()
+                await self._end_game()
                 return
-            self._update_state(move)
+            await self._update_state(move)
 
-    async def _end_game(self):
-        winner_id = self._turn % 2
+    async def _end_game(self, winner_override = None):
+        if self._is_finished:
+            return
+        self._is_finished = True
+        if winner_override:
+            winner_id = winner_override
+        else:
+            winner_id = self._turn % 2
+
         await self._broadcast(
             GameOverMsg(
                 {
@@ -98,23 +119,28 @@ class GameSession:
                 }
             )
         )
-        winner = await user_pydantic.from_queryset_single(Users.get(id=self._players_ids[winner_id])).dict()
-        loser = await user_pydantic.from_queryset_single(Users.get(id=self._players_ids[(winner_id + 1) % 2])).dict()
+        winner = await user_pydantic.from_queryset_single(Users.get(id=self._players_ids[winner_id]))
+        loser = await user_pydantic.from_queryset_single(Users.get(id=self._players_ids[(winner_id + 1) % 2]))
+        winner = winner.dict()
         winner['wins'] += 1
+        winner.pop('id', None)
+        loser = loser.dict()
         loser['loses'] += 1
+        loser.pop('id', None)
         await Users.filter(id=self._players_ids[winner_id]).update(**winner)
         await Users.filter(id=self._players_ids[(winner_id + 1) % 2]).update(**loser)
         for connection in self._connections:
-            connection.close()
+            await connection.close()
 
     async def _update_state(self, move: Dict):
+        await sleep(1)
         self._turn += 1
         player = self._turn % 2
         cost = 0 if move['cat'] == 'move' else 1
         put_level = move['level']
         put_x = move['x']
         put_y = move['y']
-        self._board[put_level][put_x][put_y] = player
+        self._board[put_level][put_x][put_y] = player + 1
         if move['cat'] == 'move':
             take_level = move['take_level']
             take_x = move['take_x']
@@ -122,9 +148,9 @@ class GameSession:
             self._board[take_level][take_x][take_y] = 0
         self._tokens[player] -= cost
         self._next_legal = self._legal()
-        self._broadcast(self._state_msg())
+        await self._broadcast(self._state_msg())
         if len(self._next_legal) == 0:
-            self._end_game()
+            await self._end_game()
 
     def _is_authorized_for_move(self, websocket: WebSocket, player_id: int) -> bool:
         current_turn = self._turn + 1
