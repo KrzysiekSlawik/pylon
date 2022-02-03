@@ -17,16 +17,16 @@ class MoveMsgError(Exception):
 
 class MoveMsg(Msg):
     def __init__(self, json_msg) -> None:
-        super().__init__(self, json_msg)
+        super().__init__(json_msg)
         self.cat = json_msg['cat']  # 'put', move, square
         self.x: int = json_msg['x']
         self.y: int = json_msg['y']
         self.level: int = json_msg['level']
-        if self.cat is 'move' or self.cat is 'square':
+        if self.cat == 'move' or self.cat == 'square':
             self.take_x: int = json_msg['take_x']
             self.take_y: int = json_msg['take_y']
             self.take_level: int = json_msg['take_level']
-        if self.cat is 'square':
+        if self.cat == 'square':
             self.take_sq_x: int = json_msg['take_sq_x']
             self.take_sq_y: int = json_msg['take_sq_y']
             self.take_sq_level: int = json_msg['take_sq_level']
@@ -38,7 +38,7 @@ class MoveMsg(Msg):
 
 class GameStateMsg(Msg):
     def __init__(self, json_msg) -> None:
-        super().__init__(self, json_msg)
+        super().__init__(json_msg)
         self.turn: int = json_msg['turn']
         self.players_ids: List[int] = json_msg['players_ids']
         self.players_names: List[str] = json_msg['players_names']
@@ -49,7 +49,7 @@ class GameStateMsg(Msg):
 
 class GameOverMsg(Msg):
     def __init__(self, json_msg) -> None:
-        super().__init__(self, json_msg)
+        super().__init__(json_msg)
         self.winner_id: int = json_msg['winner_id']
         self.winner_name: str = json_msg['winner_name']
         self.winner_tokens: int = json_msg['winner_tokens']
@@ -57,7 +57,7 @@ class GameOverMsg(Msg):
 
 class BadMsgResp(Msg):
     def __init__(self, json_msg) -> None:
-        super().__init__(self, json_msg)
+        super().__init__(json_msg)
         self.detail: str = json_msg['detail']
 
 
