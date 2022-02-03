@@ -1,0 +1,73 @@
+body {
+  background-color: lightgoldenrodyellow;
+}
+
+.circle {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  background-color: red;
+}
+.dark {
+  background-color: rgb(150, 90, 62);
+  box-shadow: inset -25px -25px 40px rgba(0, 0, 0, 0.5);
+}
+.light {
+  background-color: rgb(237, 201, 175);
+  box-shadow: inset -25px -25px 40px rgba(0, 0, 0, 0.5);
+}
+.empty {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+.level0 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-auto-rows: 115px;
+  grid-auto-columns: 130px;
+  width: 450px;
+  position: absolute;
+  filter: drop-shadow(10px 7px 3px rgba(0, 0, 0, 1));
+}
+
+.level1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-auto-rows: 115px;
+  grid-auto-columns: 112.5px;
+  width: 337.5px;
+  position: relative;
+  top: 50px;
+  left: 60px;
+  filter: drop-shadow(10px 15px 3px rgba(0, 0, 0, 3));
+}
+
+.level2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 115px;
+  grid-auto-columns: 75px;
+  width: 225px;
+  position: absolute;
+  top: 110px;
+  left: 120px;
+  filter: drop-shadow(10px 20px 3px rgba(0, 0, 0, 5));
+}
+
+.level3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 115px;
+  grid-auto-columns: 37.5px;
+  width: 125px;
+  position: absolute;
+  top: 160px;
+  left: 175px;
+  filter: drop-shadow(10px 25px 3px rgba(0, 0, 0, 7));
+}
+
+.score {
+    position: absolute;
+    left: 520px;
+    top: 20px;
+}
