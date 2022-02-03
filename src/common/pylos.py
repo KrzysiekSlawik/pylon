@@ -47,9 +47,9 @@ def _supported_empty(board: Board, level):
 
 
 def _legal_cat_put(board):
-    s = [m for m in [_supported_empty(board, level) for level in range(0, 4)]]
+    s = [m for l in [_supported_empty(board, level) for level in range(0, 4)] for m in l]
     for p in s:
-        p["sup"] = "put"
+        p["cat"] = "put"
     return s
 
 
