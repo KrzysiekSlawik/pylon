@@ -27,15 +27,15 @@ class GameSession:
         self._next_legal = self._legal()
 
     async def connect(self, websocket: WebSocket, player_id: int):
+        await websocket.accept()
         if len(self._players_ids) < 2:
             self._players_ids.append(player_id)
-            self._players_names.append(
-                await user_pydantic.from_queryset_single(Users.get(id=player_id))
-            )
+            player_db = await user_pydantic.from_queryset_single(Users.get(id=player_id))
+            self._players_names.append(player_db.dict()['username'])
             self._players_connections.append(websocket)
         self._connections.append(websocket)
-        if len(self._players_ids >= 2):
-            self.__start_game()
+        if len(self._players_ids) >= 2:
+            await self.__start_game()
 
     async def __start_game(self):
         await self._broadcast(
@@ -43,7 +43,7 @@ class GameSession:
         )
 
     def _state_msg(self) -> GameStateMsg:
-        GameStateMsg(
+        return GameStateMsg(
             {
                 'turn': self._turn,
                 'players_ids': self._players_ids,
