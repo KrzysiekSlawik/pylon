@@ -58,7 +58,7 @@ def _movable(board, level, player):
         {"x": x, "y": y, "level": level}
         for x in range(0, 4 - level)
         for y in range(0, 4 - level)
-        if board[level][x][y] == player + 1
+        if board[level][x][y] == player
         and not any(
             [
                 board[level + 1][xi][yi]
@@ -114,6 +114,7 @@ def _legal_cat_move(board, player):
     ]
     return res
 
+def _legal_cat_square(board, player)
 
 def generate_empty_board() -> Board:
     return [[[0 for _ in range(0, k)] for _ in range(0, k)] for k in [4, 3, 2, 1]]
