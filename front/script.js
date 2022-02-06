@@ -34,3 +34,21 @@ websocket.onmessage = (event) => {
     document.getElementById("player2Name").innerHTML = `Dark: ${data.players_names[1]}`
     document.getElementById("tokenPlayer2").innerHTML = `Tokens: ${data.tokens[1]}`
 };
+
+document.getElementById("refresh").addEventListener("click", () => {
+    let Http = new XMLHttpRequest();
+    let url='http://localhost:8000/game/list';
+    Http.open("GET", url);
+    Http.send();
+
+    Http.onreadystatechange = (e) => {
+        let data = JSON.parse(Http.response)
+        console.log(data)
+        let text = ""
+        for (i = 0; i < data.length; i++)
+        {
+            text += `Name: ${data[i].game_name} ID: ${data[i].game_id} Players: ${data[i].players_names}<br/>`
+        }
+        document.getElementById("gamelist").innerHTML = text
+    }
+});

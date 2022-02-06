@@ -1,5 +1,6 @@
 from common.messages import BadMsgResp, MoveMsgError, msg_from_json
 from fastapi import FastAPI, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from common.pylos import GameState
 from typing import List
 from server.database.game_session import GameSession, GameSessionState
@@ -20,6 +21,18 @@ from server.database.active_game_sessions import (
 
 
 app = FastAPI()
+
+origins = [
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 register_tortoise(
     app,

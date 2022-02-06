@@ -71,3 +71,15 @@ body {
     left: 520px;
     top: 20px;
 }
+
+.games {
+    position: absolute;
+    left: 520px;
+    top: 110px;
+}
+
+#refresh {
+    position: absolute;
+    left: 520px;
+    top: 90px;
+}
