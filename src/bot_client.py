@@ -3,7 +3,7 @@ from websocket import WebSocketApp, enableTrace
 import _thread
 import time
 import json as json
-from common.messages import MoveMsg, msg_from_json, GameStateMsg, GameOverMsg
+from common.messages import MoveMsg, msg_from_json, YourMoveMsg, GameOverMsg
 
 global my_id
 
@@ -11,7 +11,7 @@ def on_message(ws: WebSocketApp, message):
     try:
         msg_json = json.loads(message)
         msg_obj = msg_from_json(msg_json)
-        if type(msg_obj) is GameStateMsg:
+        if type(msg_obj) is YourMoveMsg:
             player_to_play = msg_obj.players_ids[(msg_obj.turn + 1)% 2]
             if player_to_play == my_id:
                 if len(msg_obj.legal) == 0:

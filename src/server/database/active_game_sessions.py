@@ -1,13 +1,13 @@
 from common.messages import Msg
 from fastapi import WebSocket
-from server.database.game_session import GameSession
+from server.database.game_session import GameSession, GameSessionState
 
 
 class GameSessionsManager:
     def __init__(self) -> None:
         self.games:list[GameSession] = []
 
-    def new_game(self, name:str) -> int:
+    def new_game(self, name:str) -> GameSessionState:
         conflicting_games = self.search_games(name)
         if conflicting_games and len(list(filter(lambda g: g.name == name, conflicting_games))):
             raise NameError

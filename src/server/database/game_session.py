@@ -1,6 +1,6 @@
 from asyncio import sleep
 from typing import Any, List, Dict
-from common.messages import BadMsgResp, GameOverMsg, GameStateMsg, MoveMsg, Msg
+from common.messages import BadMsgResp, GameOverMsg, GameStateMsg, YourMoveMsg, MoveMsg, Msg
 from fastapi import WebSocket
 from pydantic import BaseModel
 from common.pylos import Board, generate_empty_board, legal_moves
@@ -43,14 +43,18 @@ class GameSession:
             await self.__start_game()
 
     async def disconnect(self, websocket: WebSocket, player_id: int):
-        await websocket.close()
+        self._connections.remove(websocket)
         if websocket in self._players_connections:
             winner = 0 if self._players_connections[1] == websocket else 1
-            await self._end_game()
+            self._players_connections.remove(websocket)
+            await self._end_game(winner_override=winner)
 
     async def __start_game(self):
         await self._broadcast(
             self._state_msg()
+        )
+        await self._players_connections[(self._turn + 1) % 2].send_json(
+            self._your_move_msg().to_json()
         )
 
     def _state_msg(self) -> GameStateMsg:
@@ -65,12 +69,30 @@ class GameSession:
             }
         )
 
+    def _your_move_msg(self) -> GameStateMsg:
+        return YourMoveMsg(
+            {
+                'turn': self._turn,
+                'players_ids': self._players_ids,
+                'players_names': self._players_names,
+                'tokens': self._tokens,
+                'board': self._board,
+                'legal': self._legal()
+            }
+        )
+
     def _legal(self) -> List[Dict]:
+        """
+        legal moves of player that should move now
+        """
         if self._tokens[(self._turn + 1) % 2] == 0:
             return []
         return legal_moves(self._board, self._turn + 1)
 
     async def _broadcast(self, msg: Msg):
+        """
+        send message to all connected websockets (players and spectators)
+        """
         for connection in self._connections:
             await connection.send_json(
                 msg.to_json()
@@ -133,22 +155,67 @@ class GameSession:
             await connection.close()
 
     async def _update_state(self, move: Dict):
-        await sleep(1)
         self._turn += 1
         player = self._turn % 2
-        cost = 0 if move['cat'] == 'move' else 1
-        put_level = move['level']
-        put_x = move['x']
-        put_y = move['y']
-        self._board[put_level][put_x][put_y] = player + 1
+
+        if move['cat'] == 'put':
+            put_level = move['level']
+            put_x = move['x']
+            put_y = move['y']
+            self._board[put_level][put_x][put_y] = player + 1
+            self._tokens[player] -= 1
+            await sleep(0.5)
+            await self._broadcast(self._state_msg())
+
         if move['cat'] == 'move':
             take_level = move['take_level']
             take_x = move['take_x']
             take_y = move['take_y']
+            assert(self._board[take_level][take_x][take_y] == player + 1)
             self._board[take_level][take_x][take_y] = 0
-        self._tokens[player] -= cost
+            self._tokens[player] += 1
+            await sleep(0.5)
+            await self._broadcast(self._state_msg())
+            put_level = move['level']
+            put_x = move['x']
+            put_y = move['y']
+            self._board[put_level][put_x][put_y] = player + 1
+            self._tokens[player] -= 1
+            await sleep(0.5)
+            await self._broadcast(self._state_msg())
+
+        if move['cat'] == 'square':
+            put_level = move['level']
+            put_x = move['x']
+            put_y = move['y']
+            self._board[put_level][put_x][put_y] = player + 1
+            self._tokens[player] -= 1
+            await sleep(0.5)
+            await self._broadcast(self._state_msg())
+            take_level = move['take_level']
+            take_x = move['take_x']
+            take_y = move['take_y']
+            assert(self._board[take_level][take_x][take_y] == player + 1)
+            self._board[take_level][take_x][take_y] = 0
+            self._tokens[player] += 1
+            await sleep(0.5)
+            await self._broadcast(self._state_msg())
+            if move['take_sq_level'] != -1:
+                take_sq_level = move['take_sq_level']
+                take_sq_x = move['take_sq_x']
+                take_sq_y = move['take_sq_y']
+                assert(self._board[take_sq_level][take_sq_x][take_sq_y] == player + 1)
+                self._board[take_sq_level][take_sq_x][take_sq_y] = 0
+                self._tokens[player] += 1
+                await sleep(0.5)
+                await self._broadcast(self._state_msg())
+
         self._next_legal = self._legal()
+        await sleep(0.5)
         await self._broadcast(self._state_msg())
+        await self._players_connections[(self._turn + 1) % 2].send_json(
+            self._your_move_msg().to_json()
+        )
         if len(self._next_legal) == 0:
             await self._end_game()
 
@@ -162,6 +229,13 @@ class GameSession:
 
     @property
     def state(self) -> GameSessionState:
+        """
+        current game session state
+        - **game_id**: ...
+        - **game_name**: ...
+        - **players_ids**: ...
+        - **players_names**: ...
+        """
         return GameSessionState(
             game_id=self.id,
             game_name=self.name,

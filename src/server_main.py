@@ -1,12 +1,10 @@
 from common.messages import BadMsgResp, MoveMsgError, msg_from_json
 from fastapi import FastAPI, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from common.pylos import GameState
 from typing import List
-from server.database.game_session import GameSession, GameSessionState
+from server.database.game_session import GameSessionState
 
 from tortoise.contrib.fastapi import (
-    HTTPNotFoundError,
     register_tortoise
 )
 
@@ -45,17 +43,28 @@ register_tortoise(
 
 @app.post('/player/new/{username}', response_model=user_pydantic)
 async def player_new(username:str):
+    """
+    Create new player
+    """
     user = await Users.create(username=username)
     return await user_pydantic.from_tortoise_orm(user)
 
 
 @app.get('/player/list', response_model=List[user_pydantic])
 async def player_list():
+    """
+    list players
+    """
     return await user_pydantic.from_queryset(Users.all())
 
 
-@app.post('/game/new')
+@app.post('/game/new', response_model=GameSessionState)
 async def game_new(name:str):
+    """
+    Create new game and returns it's state
+
+    - **name**: game name should be unique
+    """
     try:
         return current_sessions.new_game(name)
     except NameError:
@@ -64,16 +73,28 @@ async def game_new(name:str):
 
 @app.get('/game/search/{name}', response_model=List[GameSessionState])
 async def search_games(name:str):
+    """
+    List all games that contain **name** in their names
+    - **name**: substring of game name to search
+    """
     return list(map(lambda g: g.state, current_sessions.search_games(name)))
 
 
 @app.get('/game/list', response_model=List[GameSessionState])
 def game_list():
+    """
+    List all games
+    """
     return list(map(lambda g: g.state, current_sessions.list_games()))
 
 
 @app.websocket('/game/connect')
 async def connect_to_game(websocket: WebSocket, game_id:int, player_id:int = None):
+    """
+    Connect to game
+    - **player_id** id of player that joins, if **player_id**==0 join as spectator
+    - **game_id**: id of game to join
+    """
     await current_sessions.connect(websocket, game_id, player_id)
     try:
         while True:
