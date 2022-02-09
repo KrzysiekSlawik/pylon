@@ -12,15 +12,13 @@ def on_message(ws: WebSocketApp, message):
         msg_json = json.loads(message)
         msg_obj = msg_from_json(msg_json)
         if type(msg_obj) is YourMoveMsg:
-            player_to_play = msg_obj.players_ids[(msg_obj.turn + 1)% 2]
-            if player_to_play == my_id:
-                if len(msg_obj.legal) == 0:
-                    print("no moves left")
-                    return
-                move = random.choice(msg_obj.legal)
-                move['type'] = MoveMsg.__name__
-                print(move, "move")
-                ws.send(json.dumps(MoveMsg(move).to_json()))
+            if len(msg_obj.legal) == 0:
+                print("no moves left")
+                return
+            move = random.choice(msg_obj.legal)
+            move['type'] = MoveMsg.__name__
+            print(move, "move")
+            ws.send(json.dumps(MoveMsg(move).to_json()))
         if type(msg_obj) is GameOverMsg:
             print(msg_obj)
             ws.close()
