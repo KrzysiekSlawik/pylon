@@ -30,7 +30,9 @@ def _supported_empty(board: Board, level):
 
 
 def _legal_cat_put(board):
-    s = [m for l in [_supported_empty(board, level) for level in range(0, 4)] for m in l]
+    s = [
+        m for i in [_supported_empty(board, level) for level in range(0, 4)] for m in i
+    ]
     for p in s:
         p["cat"] = "put"
     return s
@@ -97,6 +99,7 @@ def _legal_cat_move(board, player):
     ]
     return res
 
+
 def is_on_board(board, level, x, y) -> bool:
     """
     checks if coordinates are in board bounds
@@ -107,42 +110,76 @@ def is_on_board(board, level, x, y) -> bool:
     except IndexError:
         return False
 
+
 def _legal_cat_square(board, player):
-    legal_put = [m for l in [_supported_empty(board, level) for level in range(0, 3)] for m in l]
-    legal_square = [m for m in legal_put
-                    if any(
-                        [
-                            3 == len([1 for (xi,yi) in [
-                                    (m['x'], m['y'] - 1),
-                                    (m['x'] + 1, m['y'] - 1),
-                                    (m['x'] + 1, m['y'])
-                                 ]
-                                 if is_on_board(board, m['level'], xi, yi) and board[m['level']][xi][yi] == player]),
-                            3 == len([1 for (xi,yi) in [
-                                    (m['x'] + 1, m['y']),
-                                    (m['x'] + 1, m['y'] + 1),
-                                    (m['x'], m['y'] + 1)
-                                 ]
-                                 if is_on_board(board, m['level'], xi, yi) and board[m['level']][xi][yi] == player]),
-                            3 == len([1 for (xi,yi) in [
-                                    (m['x'], m['y'] + 1),
-                                    (m['x'] - 1, m['y'] + 1),
-                                    (m['x'] - 1, m['y'])
-                                 ]
-                                 if is_on_board(board, m['level'], xi, yi) and board[m['level']][xi][yi] == player]),
-                            3 == len([1 for (xi,yi) in [
-                                    (m['x'] - 1, m['y']),
-                                    (m['x'] - 1, m['y'] - 1),
-                                    (m['x'], m['y'] - 1)
-                                 ]
-                                 if is_on_board(board, m['level'], xi, yi) and board[m['level']][xi][yi] == player]),
+    legal_put = [
+        m for i in [_supported_empty(board, level) for level in range(0, 3)] for m in i
+    ]
+    legal_square = [
+        m
+        for m in legal_put
+        if any(
+            [
+                3 == len(
+                    [
+                        1
+                        for (xi, yi) in [
+                            (m["x"], m["y"] - 1),
+                            (m["x"] + 1, m["y"] - 1),
+                            (m["x"] + 1, m["y"]),
                         ]
-                    )]
+                        if is_on_board(board, m["level"], xi, yi)
+                        and board[m["level"]][xi][yi] == player
+                    ]
+                ),
+                3 == len(
+                    [
+                        1
+                        for (xi, yi) in [
+                            (m["x"] + 1, m["y"]),
+                            (m["x"] + 1, m["y"] + 1),
+                            (m["x"], m["y"] + 1),
+                        ]
+                        if is_on_board(board, m["level"], xi, yi)
+                        and board[m["level"]][xi][yi] == player
+                    ]
+                ),
+                3 == len(
+                    [
+                        1
+                        for (xi, yi) in [
+                            (m["x"], m["y"] + 1),
+                            (m["x"] - 1, m["y"] + 1),
+                            (m["x"] - 1, m["y"]),
+                        ]
+                        if is_on_board(board, m["level"], xi, yi)
+                        and board[m["level"]][xi][yi] == player
+                    ]
+                ),
+                3 == len(
+                    [
+                        1
+                        for (xi, yi) in [
+                            (m["x"] - 1, m["y"]),
+                            (m["x"] - 1, m["y"] - 1),
+                            (m["x"], m["y"] - 1),
+                        ]
+                        if is_on_board(board, m["level"], xi, yi)
+                        and board[m["level"]][xi][yi] == player
+                    ]
+                ),
+            ]
+        )
+    ]
     res = []
     for sq in legal_square:
         bcp1 = deepcopy(board)
-        bcp1[sq['level']][sq['x']][sq['y']] = player
-        takeable1 = [m for l in [_takeable(bcp1, level, player) for level in range(0, 3)] for m in l]
+        bcp1[sq["level"]][sq["x"]][sq["y"]] = player
+        takeable1 = [
+            m
+            for i in [_takeable(bcp1, level, player) for level in range(0, 3)]
+            for m in i
+        ]
         res += [
             {
                 "cat": "square",
@@ -160,8 +197,12 @@ def _legal_cat_square(board, player):
         ]
         for t in takeable1:
             bcp2 = deepcopy(bcp1)
-            bcp2[t['level']][t['x']][t['y']] = 0
-            takeable2 = [m for l in [_takeable(bcp2, level, player) for level in range(0, 3)] for m in l]
+            bcp2[t["level"]][t["x"]][t["y"]] = 0
+            takeable2 = [
+                m
+                for i in [_takeable(bcp2, level, player) for level in range(0, 3)]
+                for m in i
+            ]
             res += [
                 {
                     "cat": "square",
@@ -178,8 +219,6 @@ def _legal_cat_square(board, player):
                 for t2 in takeable2
             ]
     return res
-
-
 
 
 def generate_empty_board() -> Board:

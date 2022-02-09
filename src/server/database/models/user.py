@@ -11,4 +11,5 @@ class Users(models.Model):
     class Meta:
         ordering = ["username"]
 
+
 user_pydantic = pydantic_model_creator(Users, name="user")

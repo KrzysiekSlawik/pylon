@@ -3,9 +3,10 @@ from typing import Any
 
 
 class Resource:
-    '''
+    """
     object representing resource that could be created in the future
-    '''
+    """
+
     def __init__(self) -> None:
         self._resource = Queue()
 
